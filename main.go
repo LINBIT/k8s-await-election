@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/linbit/k8s-await-election/pkg/consts"
 
@@ -24,13 +28,17 @@ var Version = "development"
 var log = logrus.New()
 
 type AwaitElection struct {
-	WithElection   bool
-	Name           string
-	LockName       string
-	LockNamespace  string
-	LeaderIdentity string
-	StatusEndpoint string
-	LeaderExec     func(ctx context.Context) error
+	WithElection     bool
+	Name             string
+	LockName         string
+	LockNamespace    string
+	LeaderIdentity   string
+	StatusEndpoint   string
+	ServiceName      string
+	ServiceNamespace string
+	PodIP            string
+	ServicePorts     []corev1.EndpointPort
+	LeaderExec       func(ctx context.Context) error
 }
 
 type ConfigError struct {
@@ -71,15 +79,29 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 
 	// Optional
 	statusEndpoint := os.Getenv(consts.AwaitElectionStatusEndpointKey)
+	podIP := os.Getenv(consts.AwaitElectionPodIP)
+	serviceName := os.Getenv(consts.AwaitElectionServiceName)
+	serviceNamespace := os.Getenv(consts.AwaitElectionServiceNamespace)
+
+	servicePortsJson := os.Getenv(consts.AwaitElectionServicePortsJson)
+	var servicePorts []corev1.EndpointPort
+	err := json.Unmarshal([]byte(servicePortsJson), &servicePorts)
+	if serviceName != "" && err != nil {
+		return nil, fmt.Errorf("failed to parse ports from env: %w", err)
+	}
 
 	return &AwaitElection{
-		WithElection:   true,
-		Name:           name,
-		LockName:       lockName,
-		LockNamespace:  lockNamespace,
-		LeaderIdentity: leaderIdentity,
-		StatusEndpoint: statusEndpoint,
-		LeaderExec:     exec,
+		WithElection:     true,
+		Name:             name,
+		LockName:         lockName,
+		LockNamespace:    lockNamespace,
+		LeaderIdentity:   leaderIdentity,
+		StatusEndpoint:   statusEndpoint,
+		PodIP:            podIP,
+		ServiceName:      serviceName,
+		ServiceNamespace: serviceNamespace,
+		ServicePorts:     servicePorts,
+		LeaderExec:       exec,
 	}, nil
 }
 
@@ -129,6 +151,12 @@ func (el *AwaitElection) Run() error {
 		RetryPeriod:   2 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
+				// First we need to register our pod as the service endpoint
+				err := el.setServiceEndpoint(ctx, kubeClient)
+				if err != nil {
+					execResult <- err
+					return
+				}
 				// actual start the command here.
 				// Note: this callback is started in a goroutine, so we can block this
 				// execution path for as long as we want.
@@ -147,7 +175,7 @@ func (el *AwaitElection) Run() error {
 		return fmt.Errorf("failed to create leader elector: %w", err)
 	}
 
-	statusServerResult := el.startStatusEndpoint(ctx)
+	statusServerResult := el.startStatusEndpoint(ctx, elector)
 
 	go elector.Run(ctx)
 
@@ -165,7 +193,37 @@ func (el *AwaitElection) Run() error {
 	}
 }
 
-func (el *AwaitElection) startStatusEndpoint(ctx context.Context) <-chan error {
+func (el *AwaitElection) setServiceEndpoint(ctx context.Context, client *kubernetes.Clientset) error {
+	if el.ServiceName == "" {
+		return nil
+	}
+
+	endpoints := &corev1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      el.ServiceName,
+			Namespace: el.ServiceNamespace,
+		},
+		Subsets: []corev1.EndpointSubset{
+			{
+				Addresses: []corev1.EndpointAddress{{IP: el.PodIP}},
+				Ports:     el.ServicePorts,
+			},
+		},
+	}
+	_, err := client.CoreV1().Endpoints(el.ServiceNamespace).Create(ctx, endpoints, metav1.CreateOptions{})
+	if err != nil {
+		if !errors.IsAlreadyExists(err) {
+			return err
+		}
+
+		_, err := client.CoreV1().Endpoints(el.ServiceNamespace).Update(ctx, endpoints, metav1.UpdateOptions{})
+		return err
+	}
+
+	return nil
+}
+
+func (el *AwaitElection) startStatusEndpoint(ctx context.Context, elector *leaderelection.LeaderElector) <-chan error {
 	statusServerResult := make(chan error)
 
 	if el.StatusEndpoint == "" {
@@ -175,11 +233,23 @@ func (el *AwaitElection) startStatusEndpoint(ctx context.Context) <-chan error {
 
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := writer.Write([]byte("running"))
+		err := elector.Check(2 * time.Second)
 		if err != nil {
-			log.WithField("err", err).Error("failed to serve status endpoint")
+			log.WithField("err", err).Error("failed to step down gracefully, reporting unhealthy status")
+			writer.WriteHeader(500)
+			_, err := writer.Write([]byte("{\"status\": \"expired\"}"))
+			if err != nil {
+				log.WithField("err", err).Error("failed to serve request")
+			}
+			return
+		}
+
+		_, err = writer.Write([]byte("{\"status\": \"ok\"}"))
+		if err != nil {
+			log.WithField("err", err).Error("failed to serve request")
 		}
 	})
+
 	statusServer := http.Server{
 		Addr:    el.StatusEndpoint,
 		Handler: serveMux,
