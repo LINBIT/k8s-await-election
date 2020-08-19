@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  clusterIP: ""
+  ports:
+    - name: my-port
+      port: 1024
+      protocol: TCP
+  # NOTE: No selector here! A selector would automatically add all matching and ready pods to the endpoint
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-server-with-replicas
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: my-server
+  template:
+    metadata:
+      labels:
+        app: my-server
+    spec:
+      containers:
+        - name: my-server
+          image: my-server
+          args:
+            - my-singleton-server
+          ports:
+            - containerPort: 1024
+              name: my-port
+          env:
+            - name: K8S_AWAIT_ELECTION_ENABLED
+              value: "1"
+            - name: K8S_AWAIT_ELECTION_NAME
+              value: my-server
+            - name: K8S_AWAIT_ELECTION_LOCK_NAME
+              value: my-server
+            - name: K8S_AWAIT_ELECTION_LOCK_NAMESPACE
+              value: default
+            - name: K8S_AWAIT_ELECTION_IDENTITY
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: K8S_AWAIT_ELECTION_STATUS_ENDPOINT
+              value: :9999
+            - name: K8S_AWAIT_ELECTION_SERVICE_NAME
+              value: my-service
+            - name: K8S_AWAIT_ELECTION_SERVICE_NAMESPACE
+              value: default
+            - name: K8S_AWAIT_ELECTION_SERVICE_PORTS_JSON
+              value: '[{"name":"my-port","port":1024}]'
+            - name: K8S_AWAIT_ELECTION_SERVICE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+---
