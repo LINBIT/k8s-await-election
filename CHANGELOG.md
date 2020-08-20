@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.0] 2020-08-20
+
 ### Added
 * Ability to update service endpoints based on current leader
 
@@ -18,3 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Running in elected mode in k8s cluster
 * Running without election outside of k8s cluster
 * Basic error handling
+
+[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.1.0...v0.2.0
+[v0.1.0]: https://github.com/LINBIT/k8s-await-election/commits/v0.1.0
