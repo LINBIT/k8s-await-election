@@ -1,6 +1,7 @@
 name: create release binary
 on:
   release:
+    types: [created]
 jobs:
   artifacts:
     runs-on: ubuntu-latest
