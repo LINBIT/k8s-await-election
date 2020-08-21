@@ -54,7 +54,7 @@ spec:
               value: default
             - name: K8S_AWAIT_ELECTION_SERVICE_PORTS_JSON
               value: '[{"name":"my-port","port":1024}]'
-            - name: K8S_AWAIT_ELECTION_SERVICE_IP
+            - name: K8S_AWAIT_ELECTION_POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
