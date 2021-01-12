@@ -13,11 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: compile and release
-        uses: wangyoucao577/go-release-action@v1.5
+        uses: wangyoucao577/go-release-action@v1.12
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goarch: ${{ matrix.goarch }}
           goos: linux
+          goversion: https://golang.org/dl/go1.15.6.linux-${{ matrix.goarch }}.tar.gz
           ldflags: >
             -extldflags -static
             -X "main.Version=${{ github.ref }}"
