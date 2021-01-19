@@ -6,12 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.2.2] 2021-01-21
+## [v0.2.2] 2021-01-12
 
 ### Changed
 * Fixed golang version download for releases
 
-## [v0.2.1] 2021-01-21
+## [v0.2.1] 2021-01-12
 
 ### Changed
 * Used golang 1.15 to build releases
