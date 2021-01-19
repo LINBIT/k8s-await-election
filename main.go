@@ -37,6 +37,7 @@ type AwaitElection struct {
 	ServiceName      string
 	ServiceNamespace string
 	PodIP            string
+	NodeName         *string
 	ServicePorts     []corev1.EndpointPort
 	LeaderExec       func(ctx context.Context) error
 }
@@ -80,6 +81,11 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 	// Optional
 	statusEndpoint := os.Getenv(consts.AwaitElectionStatusEndpointKey)
 	podIP := os.Getenv(consts.AwaitElectionPodIP)
+	var nodeName *string
+	if val, ok := os.LookupEnv(consts.AwaitElectionNodeName); ok {
+		nodeName = &val
+	}
+
 	serviceName := os.Getenv(consts.AwaitElectionServiceName)
 	serviceNamespace := os.Getenv(consts.AwaitElectionServiceNamespace)
 
@@ -98,6 +104,7 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 		LeaderIdentity:   leaderIdentity,
 		StatusEndpoint:   statusEndpoint,
 		PodIP:            podIP,
+		NodeName:         nodeName,
 		ServiceName:      serviceName,
 		ServiceNamespace: serviceNamespace,
 		ServicePorts:     servicePorts,
@@ -205,7 +212,7 @@ func (el *AwaitElection) setServiceEndpoint(ctx context.Context, client *kuberne
 		},
 		Subsets: []corev1.EndpointSubset{
 			{
-				Addresses: []corev1.EndpointAddress{{IP: el.PodIP}},
+				Addresses: []corev1.EndpointAddress{{IP: el.PodIP, NodeName: el.NodeName}},
 				Ports:     el.ServicePorts,
 			},
 		},

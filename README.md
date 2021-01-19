@@ -37,6 +37,7 @@ The relevant environment variables are
 | `K8S_AWAIT_ELECTION_SERVICE_NAMESPACE`  | Optional: set the service namespace.                              |
 | `K8S_AWAIT_ELECTION_SERVICE_PORTS_JSON` | Optional: set to json array of endpoint ports.                    |
 | `K8S_AWAIT_ELECTION_POD_IP`             | Optional: IP of the pod, which will be used to update the service |
+| `K8S_AWAIT_ELECTION_NODE_NAME`          | Optional: Node name, will be used to update the service           |
 
 [On Service Updates]: #service-updates
 

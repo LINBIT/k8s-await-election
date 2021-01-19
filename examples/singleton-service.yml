@@ -58,4 +58,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: K8S_AWAIT_ELECTION_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
 ---

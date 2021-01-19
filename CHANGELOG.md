@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Set `nodeName` on endpoints if `K8S_AWAIT_ELECTION_NODE_NAME` is set. This enables Kubernetes to route traffic
+  from the leader Pod to itself via the service.
+
 ## [v0.2.2] 2021-01-12
 
 ### Changed
