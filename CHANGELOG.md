@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.3] 2021-01-20
+
 ### Added
 * Set `nodeName` on endpoints if `K8S_AWAIT_ELECTION_NODE_NAME` is set. This enables Kubernetes to route traffic
   from the leader Pod to itself via the service.
@@ -35,7 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Running without election outside of k8s cluster
 * Basic error handling
 
-[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.3...HEAD
+[v0.2.3]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.2...v0.2.3
 [v0.2.2]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.1.0...v0.2.0
