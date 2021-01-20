@@ -1,0 +1,113 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: get-leases
+rules:
+- apiGroups: [ "" ]
+  resources: [ "endpoints" ]
+  verbs: [ "get", "watch", "list", "create", "update" ]
+- apiGroups: [ "coordination.k8s.io" ]
+  resources: [ "leases" ]
+  verbs: [ "get", "watch", "list", "create", "update" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: get-leases
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: get-leases
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  clusterIP: ""
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+  # NOTE: No selector here! A selector would automatically add all matching and ready pods to the endpoint
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-server-with-replicas
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: httpbin
+  template:
+    metadata:
+      labels:
+        app: httpbin
+    spec:
+      volumes:
+      - name: shared-binary
+        emptyDir: {}
+      initContainers:
+      - name: build-binary
+        image: golang
+        command:
+        - '/bin/sh'
+        - '-c'
+        - |
+          git clone https://github.com/LINBIT/k8s-await-election.git
+          cd k8s-await-election
+          make
+        workingDir: /tmp/utils
+        volumeMounts:
+        - name: shared-binary
+          mountPath: /tmp/utils
+      containers:
+      - name: httpbin
+        image: kennethreitz/httpbin
+        ports:
+        - containerPort: 80
+          name: http
+        command:
+        - /tmp/utils/k8s-await-election/out/k8s-await-election
+        args: [ "gunicorn", "-b", "0.0.0.0:80", "httpbin:app", "-k", "gevent" ]
+        env:
+        - name: K8S_AWAIT_ELECTION_ENABLED
+          value: "1"
+        - name: K8S_AWAIT_ELECTION_NAME
+          value: my-server
+        - name: K8S_AWAIT_ELECTION_LOCK_NAME
+          value: my-server
+        - name: K8S_AWAIT_ELECTION_LOCK_NAMESPACE
+          value: default
+        - name: K8S_AWAIT_ELECTION_IDENTITY
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: K8S_AWAIT_ELECTION_STATUS_ENDPOINT
+          value: :9999
+        - name: K8S_AWAIT_ELECTION_SERVICE_NAME
+          value: my-service
+        - name: K8S_AWAIT_ELECTION_SERVICE_NAMESPACE
+          value: default
+        - name: K8S_AWAIT_ELECTION_SERVICE_PORTS_JSON
+          value: '[{"name":"http","port":80}]'
+        - name: K8S_AWAIT_ELECTION_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: K8S_AWAIT_ELECTION_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: shared-binary
+          mountPath: /tmp/utils
+---
