@@ -10,6 +10,9 @@ jobs:
         goarch:
           - amd64
           - s390x
+          - arm
+          - arm64
+          - ppc64le
     steps:
       - uses: actions/checkout@v2
       - name: compile and release
