@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Set leader election timeouts via environment variables (see [the readme](./README.md) for their use).
+  - `K8S_AWAIT_ELECTION_LEASE_DURATION`
+  - `K8S_AWAIT_ELECTION_RENEW_DEADLINE`
+  - `K8S_AWAIT_ELECTION_RETRY_PERIOD`
+
 ## [v0.2.4] 2021-04-30
 
 ### Added

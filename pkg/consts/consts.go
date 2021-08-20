@@ -12,4 +12,7 @@ const (
 	AwaitElectionServiceName       = "K8S_AWAIT_ELECTION_SERVICE_NAME"
 	AwaitElectionServiceNamespace  = "K8S_AWAIT_ELECTION_SERVICE_NAMESPACE"
 	AwaitElectionServicePortsJson  = "K8S_AWAIT_ELECTION_SERVICE_PORTS_JSON"
+	AwaitElectionLeaseDuration     = "K8S_AWAIT_ELECTION_LEASE_DURATION"
+	AwaitElectionRenewDeadline     = "K8S_AWAIT_ELECTION_RENEW_DEADLINE"
+	AwaitElectionRetryPeriod       = "K8S_AWAIT_ELECTION_RETRY_PERIOD"
 )
