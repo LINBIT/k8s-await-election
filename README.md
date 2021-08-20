@@ -38,6 +38,9 @@ The relevant environment variables are
 | `K8S_AWAIT_ELECTION_SERVICE_PORTS_JSON` | Optional: set to json array of endpoint ports.                    |
 | `K8S_AWAIT_ELECTION_POD_IP`             | Optional: IP of the pod, which will be used to update the service |
 | `K8S_AWAIT_ELECTION_NODE_NAME`          | Optional: Node name, will be used to update the service           |
+| `K8S_AWAIT_ELECTION_LEASE_DURATION`     | Optional: Time in seconds after which followers will start elections, if a leader did not renew it's claim. Default: 15|
+| `K8S_AWAIT_ELECTION_RENEW_DEADLINE`     | Optional: Time in seconds after which leaders will renew claims. Default: 10 |
+| `K8S_AWAIT_ELECTION_RETRY_PERIOD`       | Optional: Time in seconds after which failed claims are retried. Default: 2 |
 
 [On Service Updates]: #service-updates
 

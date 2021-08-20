@@ -8,19 +8,19 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/linbit/k8s-await-election/pkg/consts"
-
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+
+	"github.com/linbit/k8s-await-election/pkg/consts"
 )
 
 var Version = "development"
@@ -177,6 +177,22 @@ func (el *AwaitElection) Run() error {
 			},
 		},
 	}
+
+	leaseDuration, err := strconv.Atoi(os.Getenv(consts.AwaitElectionLeaseDuration))
+	if err == nil {
+		leaderCfg.LeaseDuration = time.Duration(leaseDuration) * time.Second
+	}
+
+	renewDeadline, err := strconv.Atoi(os.Getenv(consts.AwaitElectionRenewDeadline))
+	if err == nil {
+		leaderCfg.RenewDeadline = time.Duration(renewDeadline) * time.Second
+	}
+
+	retryPeriod, err := strconv.Atoi(os.Getenv(consts.AwaitElectionRetryPeriod))
+	if err == nil {
+		leaderCfg.RetryPeriod = time.Duration(retryPeriod) * time.Second
+	}
+
 	elector, err := leaderelection.NewLeaderElector(leaderCfg)
 	if err != nil {
 		return fmt.Errorf("failed to create leader elector: %w", err)
