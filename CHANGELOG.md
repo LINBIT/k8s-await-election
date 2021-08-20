@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `K8S_AWAIT_ELECTION_RENEW_DEADLINE`
   - `K8S_AWAIT_ELECTION_RETRY_PERIOD`
 
+### Changed
+* Use golang 1.17 to build release.
+* Update dependencies to kubernetes 1.22.
+* Use sha256sum instead of md5 hashes
+
 ## [v0.2.4] 2021-04-30
 
 ### Added
