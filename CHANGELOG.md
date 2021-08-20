@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.1] 2021-08-20
+
+### Changed
+* Changed download url for golang in github actions
+
 ## [v0.3.0] 2021-08-20
 
 ### Added
@@ -57,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Basic error handling
 
 [Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.0...HEAD
+[v0.3.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.4...v0.3.0
 [v0.2.4]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.3...v0.2.4
 [v0.2.3]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.2...v0.2.3

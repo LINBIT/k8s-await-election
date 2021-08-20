@@ -21,7 +21,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goarch: ${{ matrix.goarch }}
           goos: linux
-          goversion: https://golang.org/dl/go1.17.0.linux-amd64.tar.gz
+          goversion: https://golang.org/dl/go1.17.linux-amd64.tar.gz
           ldflags: >
             -extldflags -static
             -X "main.Version=${{ github.ref }}"
