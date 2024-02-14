@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.4.0] 2023-02-14
+
 ### Added
 * Directly `execve()` the child process if not running leader election.
 
@@ -68,7 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Running without election outside of k8s cluster
 * Basic error handling
 
-[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.0...HEAD
+[v0.4.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.1...v0.4.0
 [v0.3.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.4...v0.3.0
 [v0.2.4]: https://github.com/LINBIT/k8s-await-election/compare/v0.2.3...v0.2.4
