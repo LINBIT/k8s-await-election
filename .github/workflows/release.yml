@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: compile and release
-        uses: wangyoucao577/go-release-action@v
+        uses: wangyoucao577/go-release-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goarch: ${{ matrix.goarch }}
