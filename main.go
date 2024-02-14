@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +29,6 @@ var Version = "development"
 var log = logrus.New()
 
 type AwaitElection struct {
-	WithElection     bool
 	Name             string
 	LockName         string
 	LockNamespace    string
@@ -51,13 +51,6 @@ func (e *ConfigError) Error() string {
 }
 
 func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElection, error) {
-	if os.Getenv(consts.AwaitElectionEnabledKey) == "" {
-		return &AwaitElection{
-			WithElection: false,
-			LeaderExec:   exec,
-		}, nil
-	}
-
 	name := os.Getenv(consts.AwaitElectionNameKey)
 	if name == "" {
 		return nil, &ConfigError{missingEnv: consts.AwaitElectionNameKey}
@@ -97,7 +90,6 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 	}
 
 	return &AwaitElection{
-		WithElection:     true,
 		Name:             name,
 		LockName:         lockName,
 		LockNamespace:    lockNamespace,
@@ -115,12 +107,6 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 func (el *AwaitElection) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// Not running with leader election/kubernetes context, just run the provided function
-	if !el.WithElection {
-		log.Info("not running with leader election")
-		return el.LeaderExec(ctx)
-	}
 
 	// Create kubernetes client
 	kubeCfg, err := rest.InClusterConfig()
@@ -302,6 +288,16 @@ func main() {
 
 	if len(os.Args) <= 1 {
 		log.WithField("args", os.Args).Fatal("Need at least one argument to run")
+	}
+
+	if os.Getenv(consts.AwaitElectionEnabledKey) == "" {
+		path, err := exec.LookPath(os.Args[1])
+		if err != nil {
+			log.WithError(err).Fatal("Error looking up path")
+		}
+
+		err = unix.Exec(path, os.Args[1:], os.Environ())
+		log.WithError(err).Fatal("Failed to execve()")
 	}
 
 	awaitElectionConfig, err := NewAwaitElectionConfig(Execute)

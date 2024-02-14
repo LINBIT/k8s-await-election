@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Directly `execve()` the child process if not running leader election.
+
 ### Changed
 * Update deps to kubernetes 1.29.
 * Use golang 1.21 to build.
