@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    reviewers:
+      - WanzenBug
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: all # Also include indirect dependencies
+    groups:
+      gomod:
+        patterns:
+          - "*" # Include all go mod update in one PR
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - WanzenBug
+    groups:
+      ci:
+        patterns:
+          - "*" # Include all github-actions update in one PR
