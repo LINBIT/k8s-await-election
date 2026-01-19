@@ -3,7 +3,7 @@ module github.com/linbit/k8s-await-election
 go 1.25.0
 
 require (
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	golang.org/x/sys v0.40.0
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
