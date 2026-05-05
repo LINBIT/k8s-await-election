@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -188,11 +190,22 @@ func (el *AwaitElection) Run() error {
 
 	go elector.Run(ctx)
 
+	// Handle OS signals: cancel the context so ReleaseOnCancel triggers lease
+	// release before exit. Without this, SIGTERM terminates the process before
+	// cancel() is ever called, forcing followers to wait LeaseDuration to take over.
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
+	defer signal.Stop(sigCh)
+
 	// the different end conditions:
-	// 1. context was cancelled -> error
-	// 2. command executed -> either error or nil, depending on return value
-	// 3. status endpoint failed -> could not create status endpoint
+	// 1. OS signal received  -> cancel context, release lease, then exit
+	// 2. context was cancelled -> error
+	// 3. command executed -> either error or nil, depending on return value
+	// 4. status endpoint failed -> could not create status endpoint
 	select {
+	case sig := <-sigCh:
+		log.Infof("received signal %v, releasing leader lease before exit", sig)
+		return fmt.Errorf("received signal: %v", sig)
 	case <-ctx.Done():
 		return ctx.Err()
 	case r := <-execResult:
