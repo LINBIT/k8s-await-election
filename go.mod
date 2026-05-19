@@ -5,9 +5,9 @@ go 1.26.0
 require (
 	github.com/sirupsen/logrus v1.9.4
 	golang.org/x/sys v0.44.0
-	k8s.io/api v0.36.0
-	k8s.io/apimachinery v0.36.0
-	k8s.io/client-go v0.36.0
+	k8s.io/api v0.36.1
+	k8s.io/apimachinery v0.36.1
+	k8s.io/client-go v0.36.1
 )
 
 require (
