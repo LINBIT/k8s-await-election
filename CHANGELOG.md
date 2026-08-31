@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* The managed process no longer outlives `k8s-await-election`: it is shut down
+  gracefully when `k8s-await-election` is asked to terminate, and killed if
+  `k8s-await-election` dies unexpectedly.
+
 ## [v0.4.1] 2023-02-14
 
 ### Fixed

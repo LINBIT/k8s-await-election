@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -104,8 +106,8 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 	}, nil
 }
 
-func (el *AwaitElection) Run() error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (el *AwaitElection) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Create kubernetes client
@@ -120,7 +122,8 @@ func (el *AwaitElection) Run() error {
 	}
 
 	// result of the LeaderExec(ctx) command will be send over this channel
-	execResult := make(chan error)
+	execResult := make(chan error, 1)
+	execStarted := atomic.Bool{}
 
 	// Create lock for leader election using provided settings
 	lock := resourcelock.LeaseLock{
@@ -144,6 +147,7 @@ func (el *AwaitElection) Run() error {
 		RetryPeriod:   2 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
+				execStarted.Store(true)
 				// First we need to register our pod as the service endpoint
 				err := el.setServiceEndpoint(ctx, kubeClient)
 				if err != nil {
@@ -189,11 +193,17 @@ func (el *AwaitElection) Run() error {
 	go elector.Run(ctx)
 
 	// the different end conditions:
-	// 1. context was cancelled -> error
+	// 1. context was cancelled (e.g. SIGTERM/SIGINT) -> error
 	// 2. command executed -> either error or nil, depending on return value
 	// 3. status endpoint failed -> could not create status endpoint
 	select {
 	case <-ctx.Done():
+		// If the command was already started, wait for it to exit before
+		// returning: cancelling the context asks it to terminate, and dying
+		// before it is gone would cut its graceful shutdown short.
+		if execStarted.Load() {
+			return <-execResult
+		}
 		return ctx.Err()
 	case r := <-execResult:
 		return r
@@ -274,12 +284,18 @@ func (el *AwaitElection) startStatusEndpoint(ctx context.Context, elector *leade
 
 // Run the command specified the this program's arguments to completion.
 // Stdout and Stderr are inherited from this process. If the provided context is cancelled,
-// the started process is killed.
+// the started process is sent SIGTERM. Should this process die without cancelling the
+// context first (e.g. SIGKILL), the kernel kills the started process via PDEATHSIG.
 func Execute(ctx context.Context) error {
 	log.Infof("starting command '%s' with arguments: '%v'", os.Args[1], os.Args[2:])
 	cmd := exec.CommandContext(ctx, os.Args[1], os.Args[2:]...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
+	cmd.SysProcAttr = &unix.SysProcAttr{Pdeathsig: unix.SIGKILL}
+	cmd.Cancel = func() error {
+		log.Info("sending SIGTERM to managed process")
+		return cmd.Process.Signal(unix.SIGTERM)
+	}
 	return cmd.Run()
 }
 
@@ -305,7 +321,10 @@ func main() {
 		log.WithField("err", err).Fatal("failed to create runner")
 	}
 
-	err = awaitElectionConfig.Run()
+	ctx, stop := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
+	defer stop()
+
+	err = awaitElectionConfig.Run(ctx)
 	if err != nil {
 		log.WithField("err", err).Fatalf("failed to run")
 	}
