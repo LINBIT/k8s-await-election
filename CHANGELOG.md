@@ -6,16 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.0] 2026-08-31
+
 ### Changed
 * Service endpoints are now published as `EndpointSlice` resources, replacing the
   deprecated `Endpoints` resource. Deployments using the service update feature need
   RBAC permissions to create and update `endpointslices` in the `discovery.k8s.io`
   API group, and to delete `endpoints`.
+* Update deps
 
 ### Fixed
 * The managed process no longer outlives `k8s-await-election`: it is shut down
   gracefully when `k8s-await-election` is asked to terminate, and killed if
   `k8s-await-election` dies unexpectedly.
+
+## [v0.4.2] 2025-10-14
+
+### Changed
+* Update deps
 
 ## [v0.4.1] 2023-02-14
 
@@ -86,7 +94,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Running without election outside of k8s cluster
 * Basic error handling
 
-[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.2...v0.5.0
+[v0.4.2]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.1...v0.4.0
 [v0.3.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.3.0...v0.3.1
