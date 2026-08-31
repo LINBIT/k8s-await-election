@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Service endpoints are now published as `EndpointSlice` resources, replacing the
+  deprecated `Endpoints` resource. Deployments using the service update feature need
+  RBAC permissions to create and update `endpointslices` in the `discovery.k8s.io`
+  API group, and to delete `endpoints`.
+
 ### Fixed
 * The managed process no longer outlives `k8s-await-election`: it is shut down
   gracefully when `k8s-await-election` is asked to terminate, and killed if

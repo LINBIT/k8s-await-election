@@ -15,7 +15,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -40,7 +40,7 @@ type AwaitElection struct {
 	ServiceNamespace string
 	PodIP            string
 	NodeName         *string
-	ServicePorts     []corev1.EndpointPort
+	ServicePorts     []discoveryv1.EndpointPort
 	LeaderExec       func(ctx context.Context) error
 }
 
@@ -85,7 +85,7 @@ func NewAwaitElectionConfig(exec func(ctx context.Context) error) (*AwaitElectio
 	serviceNamespace := os.Getenv(consts.AwaitElectionServiceNamespace)
 
 	servicePortsJson := os.Getenv(consts.AwaitElectionServicePortsJson)
-	var servicePorts []corev1.EndpointPort
+	var servicePorts []discoveryv1.EndpointPort
 	err := json.Unmarshal([]byte(servicePortsJson), &servicePorts)
 	if serviceName != "" && err != nil {
 		return nil, fmt.Errorf("failed to parse ports from env: %w", err)
@@ -217,26 +217,49 @@ func (el *AwaitElection) setServiceEndpoint(ctx context.Context, client *kuberne
 		return nil
 	}
 
-	endpoints := &corev1.Endpoints{
+	addressType := discoveryv1.AddressTypeIPv4
+	ip := net.ParseIP(el.PodIP)
+	if ip != nil && ip.To4() == nil {
+		addressType = discoveryv1.AddressTypeIPv6
+	}
+
+	endpointSlice := &discoveryv1.EndpointSlice{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      el.ServiceName,
 			Namespace: el.ServiceNamespace,
-		},
-		Subsets: []corev1.EndpointSubset{
-			{
-				Addresses: []corev1.EndpointAddress{{IP: el.PodIP, NodeName: el.NodeName}},
-				Ports:     el.ServicePorts,
+			Labels: map[string]string{
+				discoveryv1.LabelServiceName: el.ServiceName,
+				discoveryv1.LabelManagedBy:   "k8s-await-election",
 			},
 		},
+		AddressType: addressType,
+		Endpoints: []discoveryv1.Endpoint{
+			{
+				Addresses:  []string{el.PodIP},
+				Conditions: discoveryv1.EndpointConditions{Ready: new(true)},
+				NodeName:   el.NodeName,
+			},
+		},
+		Ports: el.ServicePorts,
 	}
-	_, err := client.CoreV1().Endpoints(el.ServiceNamespace).Create(ctx, endpoints, metav1.CreateOptions{})
+	_, err := client.DiscoveryV1().EndpointSlices(el.ServiceNamespace).Create(ctx, endpointSlice, metav1.CreateOptions{})
 	if err != nil {
 		if !errors.IsAlreadyExists(err) {
 			return err
 		}
 
-		_, err := client.CoreV1().Endpoints(el.ServiceNamespace).Update(ctx, endpoints, metav1.UpdateOptions{})
-		return err
+		_, err := client.DiscoveryV1().EndpointSlices(el.ServiceNamespace).Update(ctx, endpointSlice, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Older versions managed an Endpoints resource instead. If left in place,
+	// Kubernetes mirrors it into a second EndpointSlice, which could still
+	// route traffic to a previous leader.
+	err = client.CoreV1().Endpoints(el.ServiceNamespace).Delete(ctx, el.ServiceName, metav1.DeleteOptions{})
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete legacy Endpoints resource: %w", err)
 	}
 
 	return nil

@@ -87,10 +87,14 @@ spec:
 ### Service Updates
 
 `k8s-await-election` can also be used to select which pod should receive traffic for a service.
-This is done by updating the endpoint resource associated with a service whenever a new leader is elected.
+This is done by updating the `EndpointSlice` resource associated with a service whenever a new leader is elected.
 This leader will be the only pod receiving traffic via the service.
 To enable this feature, set the `K8S_AWAIT_ELECTION_SERVICE_*` variables.
 See [the full example](./examples/singleton-service.yml)
+
+The pod's service account needs permission to `create` and `update` `endpointslices` in the
+`discovery.k8s.io` API group, as well as to `delete` `endpoints`, which were managed by
+older versions of `k8s-await-election`.
 
 #### Why update service endpoints?
 
