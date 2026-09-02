@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: compile and release
         uses: wangyoucao577/go-release-action@v1
+        env:
+          CGO_ENABLED: "0"
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goarch: ${{ matrix.goarch }}
