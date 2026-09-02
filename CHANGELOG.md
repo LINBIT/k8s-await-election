@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.1] 2026-09-02
+
 ### Fixed
 * The `amd64` release binary is now statically linked, like the binaries for all
   other architectures. It no longer requires `glibc` on the host or container image
@@ -99,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Running without election outside of k8s cluster
 * Basic error handling
 
-[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/LINBIT/k8s-await-election/compare/v0.5.1...HEAD
+[v0.5.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.2...v0.5.0
 [v0.4.2]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/LINBIT/k8s-await-election/compare/v0.4.0...v0.4.1
